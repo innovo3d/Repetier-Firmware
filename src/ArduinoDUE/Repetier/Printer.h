@@ -1260,6 +1260,35 @@ public:
     - Go to a position, where enabling the z-probe is possible without leaving the valid print area.
     */
     static void prepareForProbing();
+
+/////// INVENTOR BOARD TMC2130 Driver Support ///////	
+#if (USES_TMC2130_DRIVERS)
+	static void tmc2130_init();
+#if (X_IS_TMC2130)
+	static Trinamic_TMC2130 stepperX;
+	static void WriteTMC_X(int reg_index, int32_t value);	
+	static void ReadTMC_X(int reg_index);
+#endif
+#if (Y_IS_TMC2130)
+	static Trinamic_TMC2130 stepperY;
+	static void WriteTMC_Y(int reg_index, int32_t value);
+	static void ReadTMC_Y(int reg_index);
+#endif
+#if (Z_IS_TMC2130)
+	static Trinamic_TMC2130 stepperZ;
+	static void WriteTMC_Z(int reg_index, int32_t value);
+	static void ReadTMC_Z(int reg_index);
+#endif
+#if (E0_IS_TMC2130)
+	static Trinamic_TMC2130 stepperE0;
+#endif
+#if (E1_IS_TMC2130)
+	static Trinamic_TMC2130 stepperE1;
+#endif
+#if (E2_IS_TMC2130)
+	static Trinamic_TMC2130 stepperE2;
+/////// END INVENTOR BOARD TMC2130 Driver Support ///////	
+
 #endif
 #if defined(DRV_TMC2130)
     static void configTMC2130(TMC2130Stepper* tmc_driver, bool tmc_stealthchop, int8_t tmc_sgt,

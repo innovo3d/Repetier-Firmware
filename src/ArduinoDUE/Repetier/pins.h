@@ -36,6 +36,8 @@ STEPPER_CURRENT_CONTROL
 #define EEPROM_SPI_ALLIGATOR 2
 #define EEPROM_SDCARD 3
 
+#define INVENTOR_BOARD 777
+
 #if MOTHERBOARD == 401
 #ifndef __SAM3X8E__
 #error Oops!  Make sure you have 'Arduino Due' selected from the 'Tools -> Boards' menu.
@@ -1761,6 +1763,123 @@ AD15 CH15
 // TWI_MMR_IADRSZ_1_BYTE for 1 byte, or TWI_MMR_IADRSZ_2_BYTE for 2 byte
 #define EEPROM_ADDRSZ_BYTES     TWI_MMR_IADRSZ_2_BYTE
 #define EEPROM_AVAILABLE EEPROM_SPI_ALLIGATOR
+#endif
+
+/*****************************************************************
+* Innovo Inventor Board 
+* http://www.innovo3d.co
+******************************************************************/
+#if MOTHERBOARD == INVENTOR_BOARD
+#ifndef __SAM3X8E__
+#error Oops!  Make sure you have 'Arduino Due' selected from the 'Tools -> Boards' menu.
+#endif
+
+#define KNOWN_BOARD
+#define CPU_ARCH ARCH_ARM
+#define STEPPER_CURRENT_CONTROL  CURRENT_CONTROL_MCP4728
+
+//////////////////////// MCP4728 stuff
+#define MCP4728_I2C_ADDRESS	0x60 << 1						// Base Address (0x60); Pre-Shifted Left 1 bit for Repetier HAL.
+#define MCP4728_GENERALCALL_ADDRESS  0x00					// General Call Address. Weird, but OK...
+#define MCP4728_CMD_MULTI_WRITE   0B01000000				// Writes DAC Settings, Does not update EEPROM.
+#define MCP4728_CMD_SEQ_WRITE     0B01010000				// Writes DAC Settings, also persists to EEPROM.
+#define MCP4728_CMD_GC_UPDATE     0B00001000				// General Call Update - Update all DAC Outputs (Only way to update DAC Outputs on PrintrBoard Rev F because they tied /LDAC to VDD.
+#define MCP4728_CMD_GC_RESET      0B00000110				// General Call Reset
+#define MCP4728_VREF 		1								// From DataSheet. We will use MCP4728's internal 2.048V as Vref
+#define MCP4728_GAIN		0								// From DataSheet. Use 1x Gain Multiplier (0V - 2.048V);
+#define MCP4728_NUM_CHANNELS    4							// Duh. Specified here in case there's a beefier chip used on some other board someday.
+#define MCP4728_STEPPER_ORDER 	{3,2,1,0}					// PrintrBoard wired 'em up backwards. SMH.  X, Y, Z, E
+#define MCP4728_VOUT_MAX 2600								// This was retained to maintain compatibility with the old code... in Inventor Board case, 2600 => 1300mV i.e. 1.3V
+#define MCP4728_VOUT_MAX_VOLTS (MCP4728_VOUT_MAX/2000.0)	// The actual max output voltage, in volts... Divided by 2, then 1000(mV=>V) for the Inventor Board... Presumably just different gain used on others.
+
+///////////////// SPI Routing Pins (unique to Inventor board - uses mux/demuxes to select chips and route all SPI lines, instead of multiple CS pins)
+#define SPI_OE_1 25
+#define SPI_OE_2 47
+#define SPI_OE_3 6
+#define SPI_SEL_1 27
+#define SPI_SEL_2 46
+#define SPI_SEL_3 5
+#define SPI_CS 4
+
+
+/*****************************************************************
+* Arduino Due Pin Assignments
+******************************************************************/
+#define ORIG_X_STEP_PIN     24
+#define ORIG_X_DIR_PIN      23
+#define ORIG_X_MIN_PIN      28
+#define ORIG_X_MAX_PIN      34	
+/* Set to X_MIN... using StallGuard, we connect both to the same pin. On the board, the actual X_MAX is pin 34 */
+#define ORIG_X_ENABLE_PIN   26
+
+#define ORIG_Y_STEP_PIN     17 
+#define ORIG_Y_DIR_PIN      16
+#define ORIG_Y_MIN_PIN      30
+#define ORIG_Y_MAX_PIN      36	
+/* Set to Y_MIN... using StallGuard, we connect both to the same pin. On the board, the actual Y_MAX is pin 36 */
+#define ORIG_Y_ENABLE_PIN   22
+
+#define ORIG_Z_STEP_PIN     2
+#define ORIG_Z_DIR_PIN      3
+#define ORIG_Z_MIN_PIN      32  
+/* Set to Z_MAX... using StallGuard, we connect both to the same pin. On the board the actual Z_MIN is pin 32 */
+#define ORIG_Z_MAX_PIN      38	
+#define ORIG_Z_ENABLE_PIN   15
+
+#define ORIG_Z_PROBE_PIN	32	
+/* for Stallguard/Conductive probe, use 38 (Z_MAX).... for Accelerometer use 32 (Z_MIN)... */
+
+// Pins start to get crazy... the ADC pin 4 is called A3, D57, AD4, A.6, 82... I don't pretend to get it, but the pins below work!
+// All ADC pins refer to SAM3X8E Pin names, not the A0-A11 that is actually on the DUE (just to make things more fun I assume)
+// Reference to the insanity: http://www.robgray.com/temp/Due-pinout-WEB.png
+#define HEATER_0_PIN     13
+#define HEATER_1_PIN     7 
+#define HEATER_2_PIN     12
+#define HEATER_3_PIN     11		// This is actually case LEDs on the Inventor board, not a third heater
+#define TEMP_0_PIN       4		// AD4
+#define TEMP_1_PIN       3		// AD3
+#define TEMP_2_PIN       10		// AD10
+#define TEMP_3_PIN       11		// AD11
+#define TEMP_4_PIN       12		// AD12
+
+
+#define ORIG_E0_STEP_PIN    56
+#define ORIG_E0_DIR_PIN     55
+#define ORIG_E0_ENABLE_PIN  54
+
+#define ORIG_E1_STEP_PIN    60
+#define ORIG_E1_DIR_PIN     59
+#define ORIG_E1_ENABLE_PIN  61
+
+#define ORIG_E2_STEP_PIN    51
+#define ORIG_E2_DIR_PIN     53
+#define ORIG_E2_ENABLE_PIN  49
+
+#define SDSUPPORT			false
+#define SDSS 4
+
+#define LED_PIN				-1
+#define ORIG_FAN_PIN		8	 
+#define ORIG_FAN2_PIN		9 
+#define ORIG_PS_ON_PIN		-1
+#define KILL_PIN			-1
+#define SUICIDE_PIN			-1 
+
+#define ORIG_CASE_LIGHTS_PIN	11
+
+#define SDA_PIN					20  
+#define SCL_PIN					21  	
+
+#define E0_PINS ORIG_E0_STEP_PIN,ORIG_E0_DIR_PIN,ORIG_E0_ENABLE_PIN,
+#define E1_PINS ORIG_E1_STEP_PIN,ORIG_E1_DIR_PIN,ORIG_E1_ENABLE_PIN,
+#define E2_PINS ORIG_E2_STEP_PIN,ORIG_E2_DIR_PIN,ORIG_E2_ENABLE_PIN,
+
+#define TWI_CLOCK_FREQ          400000
+#define EEPROM_SERIAL_ADDR      0x50   // 7 bit i2c address (without R/W bit)
+#define EEPROM_PAGE_SIZE        64     // page write buffer size
+#define EEPROM_PAGE_WRITE_TIME  7      // page write time in milliseconds (docs say 5ms but that is too short)
+#define EEPROM_ADDRSZ_BYTES TWI_MMR_IADRSZ_2_BYTE
+#define EEPROM_AVAILABLE EEPROM_I2C
 #endif
 
 

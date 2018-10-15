@@ -577,16 +577,25 @@ void motorCurrentReadings() {
 }
 #endif // CURRENT_CONTROL_TMC2130
 
-#if STEPPER_CURRENT_CONTROL == CURRENT_CONTROL_MCP4728
-uint8_t   _intVref[]     = {MCP4728_VREF, MCP4728_VREF, MCP4728_VREF, MCP4728_VREF};
-uint8_t   _gain[]        = {MCP4728_GAIN, MCP4728_GAIN, MCP4728_GAIN, MCP4728_GAIN};
-uint8_t   _powerDown[]   = {0, 0, 0, 0};
-int16_t   dac_motor_current[] =  {0, 0, 0, 0};
 
-uint8_t   _intVrefEp[]   = {MCP4728_VREF, MCP4728_VREF, MCP4728_VREF, MCP4728_VREF};
-uint8_t   _gainEp[]      = {MCP4728_GAIN, MCP4728_GAIN, MCP4728_GAIN, MCP4728_GAIN};
-uint8_t   _powerDownEp[] = {0, 0, 0, 0};
-int16_t    _valuesEp[]   = {0, 0, 0, 0};
+
+#if STEPPER_CURRENT_CONTROL == CURRENT_CONTROL_MCP4728
+// FOR INNOVO INVENTOR BOARD
+// Gain seems to be set to 2x by defualt, we will force it to x1 (value of 0) since likely won't need over 2.048V
+// I suspect that my problem was reading the values before setting them (trying to ensure SPI functionality before changing anything)
+// But if you read before write, you will set the gains (below) to the default (x2), instead of what is specified in pins.h...
+// thus, the output won't match expectation... so we'll force it to our desired gain
+uint8_t	  forceAllGain = 0;
+
+uint8_t   _intVref[] = { MCP4728_VREF, MCP4728_VREF, MCP4728_VREF, MCP4728_VREF };
+uint8_t   _gain[] = { MCP4728_GAIN, MCP4728_GAIN, MCP4728_GAIN, MCP4728_GAIN };
+uint8_t   _powerDown[] = { 0,0,0,0 };
+int16_t   dac_motor_current[] = { 0,0,0,0 };
+
+uint8_t   _intVrefEp[] = { MCP4728_VREF, MCP4728_VREF, MCP4728_VREF, MCP4728_VREF };
+uint8_t   _gainEp[] = { MCP4728_GAIN, MCP4728_GAIN, MCP4728_GAIN, MCP4728_GAIN };
+uint8_t   _powerDownEp[] = { 0,0,0,0 };
+int16_t    _valuesEp[] = { 0,0,0,0 };
 
 uint8_t   dac_stepper_channel[] = MCP4728_STEPPER_ORDER;
 
@@ -632,7 +641,7 @@ void dacAnalogUpdate(bool saveEEPROM = false) {
     for (int i = 0; i < MCP4728_NUM_CHANNELS; i++) {
         uint16_t level = dac_motor_current[i];
 
-        uint8_t highbyte = ( _intVref[i] << 7 | _gain[i] << 4 | (uint8_t)((level) >> 8) );
+        uint8_t highbyte = ( _intVref[i] << 7 | forceAllGain << 4 | (uint8_t)((level) >> 8) );
         uint8_t lowbyte =  ( (uint8_t) ((level) & 0xff) );
         dac_write_cmd = MCP4728_CMD_MULTI_WRITE | (i << 1);
 
@@ -654,7 +663,7 @@ void dacCommitEeprom() {
     dacReadStatus(); // Refresh EEPROM Values with values actually stored in EEPROM. .
 }
 
-void dacPrintSet(int dacChannelSettings[], const char* dacChannelPrefixes[]) {
+void dacPrintSet(int16_t dacChannelSettings[], const char* dacChannelPrefixes[]) {
     for (int i = 0; i < MCP4728_NUM_CHANNELS; i++) {
         uint8_t dac_channel = dac_stepper_channel[i]; // DAC Channel is a mapped lookup.
         Com::printF(dacChannelPrefixes[i], ((float)dacChannelSettings[dac_channel] * 100 / MCP4728_VOUT_MAX));
@@ -683,6 +692,54 @@ void setMotorCurrent( uint8_t xyz_channel, uint16_t level ) {
 void setMotorCurrentPercent( uint8_t channel, float level) {
     uint16_t raw_level = ( level * MCP4728_VOUT_MAX / 100 );
     setMotorCurrent(channel, raw_level);
+}
+// DAC VREF SETUP FOR INVENTOR BOARD
+// Function to set DAC output voltages by specifying the actual voltage
+// Assumes we force the gain to x1, an internal reference, and a 3.3V system)
+void setDACVoltageDirectly(uint8_t channel, float level) {
+	if (level > MCP4728_VOUT_MAX_VOLTS) level = MCP4728_VOUT_MAX_VOLTS;
+	if (level < 0) level = 0;
+	uint16_t raw_level = 4095 * (level / 2.048);
+	setMotorCurrent(channel, raw_level);
+}
+
+// Functions to display DAC output voltages and additional information directly
+void dacPrintVoltages() {
+	const char* dacChannelPrefixes[] = { Com::tSpaceXColon, Com::tSpaceYColon, Com::tSpaceZColon, Com::tSpaceEColon };
+
+	Com::printFLN(Com::tMCPEpromSettings);
+	for (int i = 0; i < MCP4728_NUM_CHANNELS; i++) {
+		uint8_t dac_channel = dac_stepper_channel[i]; // DAC Channel is a mapped lookup.
+		Com::printF(dacChannelPrefixes[i]);
+		float voltVal = (float)((float)_valuesEp[dac_channel] * (2.048 / 4096.0));
+		float percentVal = (voltVal / MCP4728_VOUT_MAX_VOLTS) * 100.0;
+		Com::printF("  Actual Voltage: ", voltVal);
+		Com::printF("V   ");
+		Com::printF("(", percentVal);
+		Com::printF("%)  ");
+		Com::printF(Com::tSpaceRaw);
+		Com::printF(Com::tColon, _valuesEp[dac_channel]);
+		Com::printF("   VRef: ", _intVrefEp[dac_channel]);
+		Com::printF("   Gain: ", _gainEp[dac_channel]);
+		Com::printFLN("   PwrDown: ", _powerDownEp[dac_channel]);
+	}
+
+	Com::printFLN(Com::tMCPCurrentSettings);
+	for (int i = 0; i < MCP4728_NUM_CHANNELS; i++) {
+		uint8_t dac_channel = dac_stepper_channel[i]; // DAC Channel is a mapped lookup.
+		Com::printF(dacChannelPrefixes[i]);
+		float voltVal = (float)((float)dac_motor_current[dac_channel] * (2.048 / 4096.0));
+		float percentVal = (voltVal/MCP4728_VOUT_MAX_VOLTS) * 100.0;
+		Com::printF("  Actual Voltage: ", voltVal);
+		Com::printF("V   ");
+		Com::printF("(", percentVal);
+		Com::printF("%)  ");
+		Com::printF(Com::tSpaceRaw);
+		Com::printF(Com::tColon, dac_motor_current[dac_channel]);
+		Com::printF("   VRef: ", _intVref[dac_channel]);
+		Com::printF("   Gain: ", _gain[dac_channel]);
+		Com::printFLN("   PwrDown: ", _powerDown[dac_channel]);
+	}
 }
 
 void motorCurrentControlInit() { //Initialize MCP4728 Motor Current
@@ -2695,7 +2752,28 @@ void Commands::processMCode(GCode *com) {
             HAL::eprSetByte(EPR_INTEGRITY_BYTE, EEPROM::computeChecksum());
         }
 #endif
-        break;
+    break;
+    //////////////////////////////  INVENTOR BOARD CUSTOM M-CODE //////////////////////////////
+    //////////////////////////////  Custom M-Code to set the DAC output voltages directly //////////////////////////////
+	// M906 => Set DAC output voltages using axis codes. Values are interpreted directly as the 
+	// voltage to output (i.e. between 0V and MCP4728_VOUT_MAX). Anything above MCP4728_VOUT_MAX
+	// will be capped, and set to MCP4728_VOUT_MAX.
+	case 906:
+		#if STEPPER_CURRENT_CONTROL == CURRENT_CONTROL_MCP4728
+			// If "S" is specified, use that as initial default value, then update each axis w/ specific values as found later.
+			if (com->hasS()) {
+				for (int i = 0; i < 10; i++) {
+					setDACVoltageDirectly(i, com->S);
+				}
+			}
+			if (com->hasX()) setDACVoltageDirectly(0, (float)com->X);
+			if (com->hasY()) setDACVoltageDirectly(1, (float)com->Y);
+			if (com->hasZ()) setDACVoltageDirectly(2, (float)com->Z);
+			if (com->hasE()) setDACVoltageDirectly(3, (float)com->E);
+		#endif			
+		break;
+		////////////////////////////// End of custom M-Code //////////////////////////////
+
     case 907: { // M907 Set digital trimpot/DAC motor current using axis codes.
 #if STEPPER_CURRENT_CONTROL != CURRENT_CONTROL_MANUAL
         // If "S" is specified, use that as initial default value, then update each axis w/ specific values as found later.
@@ -2726,7 +2804,10 @@ void Commands::processMCode(GCode *com) {
     break;
     case 909: { // M909 Read digital trimpot settings.
 #if STEPPER_CURRENT_CONTROL == CURRENT_CONTROL_MCP4728
-        dacPrintValues();
+		// NOTE: Set to printout the actual voltages and MCP settings, as opposed to a current scaling... 
+		// To use the old style, comment out dacPrintVoltages, and uncomment the line below.
+        //dacPrintValues();	
+		dacPrintVoltages();
 #endif
     }
     break;
@@ -2735,6 +2816,66 @@ void Commands::processMCode(GCode *com) {
         dacCommitEeprom();
 #endif
         break;
+    //////////  Custom M-Codes for INVENTOR BOARD ////////////////////
+    //////////  Custom M-Codes to read/write TMC2130 registers ////////////////////
+    ////////////////////////////////////////////////
+    // M920 -> Write to a TMC2130 register/setting
+    ////////////////////////////////////////////////
+    //	Takes an axis code (X,Y,Z,E) with the register index (see below) and an "S" parameter that indicates the value
+    //	i.e. M920 X3 S26
+    case 920:
+        #if USES_TMC2130_DRIVERS	                
+        if(com->hasS()) {
+            if (com->hasX() && X_IS_TMC2130) { Printer::WriteTMC_X((int)com->X, com->S); }
+            if (com->hasY() && Y_IS_TMC2130) { Printer::WriteTMC_Y((int)com->Y, com->S); }
+            if (com->hasZ() && Z_IS_TMC2130) { Printer::WriteTMC_Z((int)com->Z, com->S); }
+        }
+        else {
+            Com::printFLN("No value found, so no register was written!");
+        }
+        #endif			
+        break;
+
+        ////////////////////////////////////////////////
+        // M921: Read from a TMC2130 register/setting
+        ////////////////////////////////////////////////
+        // Takes axis code (X,Y,Z,E) with an index of which register to read (see below)
+        // i.e. M921 X3
+    case 921:
+        #if USES_TMC2130_DRIVERS
+            if (com->hasX() && X_IS_TMC2130) { Printer::ReadTMC_X((int)com->X); }
+            if (com->hasY() && Y_IS_TMC2130) { Printer::ReadTMC_Y((int)com->Y); }
+            if (com->hasZ() && Z_IS_TMC2130) { Printer::ReadTMC_Z((int)com->Z); }
+        #endif			
+        break;
+
+        ////////////////////////////////////////////////
+        // M922: List available TMC2130 registers/indicies
+        ////////////////////////////////////////////////
+    case 922:
+        #if USES_TMC2130_DRIVERS
+            Com::printFLN("1 = MRES");
+            Com::printFLN("2 = INTPOL");
+            Com::printFLN("3 = TBL");
+            Com::printFLN("4 = TOFF");
+            Com::printFLN("5 = HSTRT");
+            Com::printFLN("6 = HEND");
+            Com::printFLN("7 = CHM");
+            Com::printFLN("8 = TPOWERDOWN");
+            Com::printFLN("9 = EN_PWM_MODE");
+            Com::printFLN("10 = TCOOLTHRS");
+            Com::printFLN("11 = SFILT");
+            Com::printFLN("12 = SGT");
+            Com::printFLN("13 = SEIMIN");
+            Com::printFLN("14 = SEMIN");
+            Com::printFLN("15 = SEMAX");
+            Com::printFLN("16 = SEDN");
+            Com::printFLN("17 = SEUP");
+            Com::printFLN("18 = diag1_stall");
+        #endif			
+        break;			
+        ////////////////////////////// End of custom M-Code //////////////////////////////
+
 #if 0 && UI_DISPLAY_TYPE != NO_DISPLAY
     // some debugging commands normally disabled
     case 888:

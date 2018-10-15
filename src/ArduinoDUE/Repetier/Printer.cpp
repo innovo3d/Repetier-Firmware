@@ -1262,6 +1262,16 @@ void Printer::setup() {
 #endif // DRIVE_SYSTEM
     Extruder::selectExtruderById(0);
 
+/////////// INVENTOR BOARD SPI routing init   ///////////
+#if MOTHERBOARD == INVENTOR_BOARD		
+	HAL::InitSPIRouting();
+#endif
+/////////// INVENTOR BOARD TMC2130 Driver init  ///////////
+#if USES_TMC2130_DRIVERS	
+	tmc2130_init();
+#endif
+/////////// END OF INVENTOR BOARD SETUP   ///////////
+
 #if FEATURE_SERVO                   // set servos to neutral positions at power_up
 #if defined(SERVO0_NEUTRAL_POS) && SERVO0_NEUTRAL_POS >= 500
     HAL::servoMicroseconds(0, SERVO0_NEUTRAL_POS, 1000);

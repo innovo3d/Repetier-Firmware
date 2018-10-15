@@ -671,6 +671,84 @@ void HAL::spiSendBlock(uint8_t token, const uint8_t* buf) {
 }
 #endif
 
+#if MOTHERBOARD == INVENTOR_BOARD
+//////////////////////////////////////////////////////////////////////////////////////
+//                        INVENTOR BOARD SPI Routing                               //
+//////////////////////////////////////////////////////////////////////////////////////
+// The inventor board uses mux/demux chips to route the SPI signals (including CS) to
+// many slaves, all using the same CS pin. The main reason is to allow slaving many 
+// devices without comprimising signal integrity (and thus the usable bus speed).
+void HAL::InitSPIRouting() {
+	SET_OUTPUT(SPI_OE_1);
+	SET_OUTPUT(SPI_OE_2);
+	SET_OUTPUT(SPI_OE_3);
+	SET_OUTPUT(SPI_SEL_1);
+	SET_OUTPUT(SPI_SEL_2);
+	SET_OUTPUT(SPI_SEL_3);
+	WRITE(SPI_OE_1, HIGH);
+	WRITE(SPI_OE_2, HIGH);
+	WRITE(SPI_OE_3, HIGH);
+	WRITE(SPI_SEL_1, LOW);
+	WRITE(SPI_SEL_2, LOW);
+	WRITE(SPI_SEL_3, LOW);
+}
+void HAL::RouteSPITo(int chipNum) {
+	int sel = 0;
+	int oe = 0;
+	switch (chipNum)
+	{
+	case SPI_X:
+		sel = 0;
+		oe = 0b001;
+		//Com::printFLN(PSTR("Select SPI_X: "));
+		break;
+	case SPI_Y:
+		sel = 0;
+		oe = 0b010;
+		//Com::printFLN(PSTR("Select SPI_Y: "));
+		break;
+	case SPI_Z:
+		sel = 0;
+		oe = 0b100;
+		//Com::printFLN(PSTR("Select SPI_Z: "));
+		break;
+	case SPI_E0:
+		sel = 1;
+		oe = 0b100;
+		//Com::printFLN(PSTR("Select SPI_E0: "));
+		break;
+	case SPI_E1:
+		sel = 1;
+		oe = 0b010;
+		//Com::printFLN(PSTR("Select SPI_E1: "));
+		break;
+	case SPI_E2:
+		sel = 1;
+		oe = 0b001;
+		//Com::printFLN(PSTR("Select SPI_E2: "));
+		break;
+	case SPI_NONE:
+	default:
+		sel = 0;
+		oe = 0b000;
+		//Com::printFLN(PSTR("Select SPI_NONE: "));
+		break;
+	}
+	//Com::printFLN(PSTR("OE1 = "), !(oe & 0b001));
+	//Com::printFLN(PSTR("OE2 = "), !(oe & 0b010));
+	//Com::printFLN(PSTR("OE3 = "), !(oe & 0b100));
+	WRITE(SPI_OE_1, !(oe & 0b001));
+	WRITE(SPI_OE_2, !(oe & 0b010));
+	WRITE(SPI_OE_3, !(oe & 0b100));
+	//Com::printFLN(PSTR("SEL1 = "), sel);
+	//Com::printFLN(PSTR("SEL2 = "), sel);
+	//Com::printFLN(PSTR("SEL3 = "), sel);
+	WRITE(SPI_SEL_1, sel);
+	WRITE(SPI_SEL_2, sel);
+	WRITE(SPI_SEL_3, sel);
+}
+#endif
+
 /****************************************************************************************
  Setting for I2C Clock speed. needed to change  clock speed for different peripherals
 ****************************************************************************************/

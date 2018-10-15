@@ -989,6 +989,8 @@ on this endstop.
 #elif (MOTHERBOARD==500) || (MOTHERBOARD==501) || (MOTHERBOARD==502) // Alligator boards
 //#define MOTOR_CURRENT {130,130,130,110,110,110,110} // expired method
 #define MOTOR_CURRENT_PERCENT {51,51,51,44,44,44,44}
+#elif (MOTHERBOARD==INVENTOR_BOARD) // INVENTOR BOARD
+#define MOTOR_CURRENT_PERCENT {30,30,40,0}			// ZOT - Not currently used
 #endif
 
 /** \brief Number of segments to generate for delta conversions per second of move
@@ -1942,6 +1944,64 @@ Values must be in range 1..255
 // #define MOTOR_DRIVER_x StepperDriver<int stepPin, int dirPin, int enablePin,bool invertDir, bool invertEnable>(float stepsPerMM,float speed)
 // #define MOTOR_DRIVER_x StepperDriverWithEndstop<int stepPin, int dirPin, int enablePin,bool invertDir, bool invertEnable,int endstop_pin,bool minEndstop,minEndstop, bool endstopPullup> var(300,10,50)
 #define MOTOR_DRIVER_1(var) StepperDriver<E1_STEP_PIN, E1_DIR_PIN, E1_ENABLE_PIN, false, false> var(100.0f,5.0f)
+
+//////////////////////////////////////////////////////////////////////////////////
+//                         INVENTOR BOARD TMC2130 Driver Support                //
+//////////////////////////////////////////////////////////////////////////////////
+#define USES_TMC2130_DRIVERS true
+/////// Trinamic Axis Settings ///////
+#if USES_TMC2130_DRIVERS
+#include "Trinamic_TMC2130.h"
+
+#define X_IS_TMC2130 true
+#define X_IHOLD      10		// 0-31
+#define X_IRUN       31		// 0-31
+#define X_IHOLDDELAY 6		// 0-15
+#define X_ISCALE     1		// 0: Internal ref, 1: Analog voltage used as reference
+#define X_MICROSTEPS 16		// number of microsteps
+#define X_SPI_CS	 SPI_CS	// The chip select pin for this axis driver
+
+#define Y_IS_TMC2130 true
+#define Y_IHOLD      10		// 0-31
+#define Y_IRUN       31		// 0-31
+#define Y_IHOLDDELAY 6		// 0-15
+#define Y_ISCALE     1		//  0: Internal ref, 1: Analog voltage used as reference
+#define Y_MICROSTEPS 16		// number of microsteps
+#define Y_SPI_CS	 SPI_CS	// The chip select pin for this axis driver
+
+#define Z_IS_TMC2130 true
+#define Z_IHOLD      15		// 0-31
+#define Z_IRUN       31		// 0-31
+#define Z_IHOLDDELAY 6		// 0-15
+#define Z_ISCALE     1		//  0: Internal ref, 1: Analog voltage used as reference
+#define Z_MICROSTEPS 16		// number of microsteps
+#define Z_SPI_CS	 SPI_CS	// The chip select pin for this axis driver
+
+#define E0_IS_TMC2130 false
+#define E0_IHOLD      10	// 0-31
+#define E0_IRUN       31	// 0-31
+#define E0_IHOLDDELAY 6		// 0-15
+#define E0_ISCALE     1		// 0: Internal ref, 1: Analog voltage used as reference
+#define E0_MICROSTEPS 16	// number of microsteps
+#define E0_SPI_CS	 SPI_CS	// The chip select pin for this axis driver
+
+#define E1_IS_TMC2130 false
+#define E1_IHOLD      10	// 0-31
+#define E1_IRUN       31	// 0-31
+#define E1_IHOLDDELAY 6		// 0-15
+#define E1_ISCALE     1		// 0: Internal ref, 1: Analog voltage used as reference
+#define E1_MICROSTEPS 16	// number of microsteps
+#define E1_SPI_CS	 SPI_CS	// The chip select pin for this axis driver
+
+#define E2_IS_TMC2130 false
+#define E2_IHOLD      10	// 0-31
+#define E2_IRUN       31	// 0-31
+#define E2_IHOLDDELAY 6		// 0-15
+#define E2_ISCALE     1		// 0: Internal ref, 1: Analog voltage used as reference
+#define E2_MICROSTEPS 16	// number of microsteps
+#define E2_SPI_CS	 SPI_CS	// The chip select pin for this axis driver
+#endif
+/////// End Trinamic Axis Settings ///////
 
 /*
   You can expand firmware functionality with events and you own event handler.
