@@ -41,7 +41,7 @@ Level 5: Nonlinear motor step position, only for nonlinear drive systems
 
 #ifndef PRINTER_H_INCLUDED
 #define PRINTER_H_INCLUDED
-
+#endif
 
 #if defined(AUTOMATIC_POWERUP) && AUTOMATIC_POWERUP && PS_ON_PIN > -1
 #define ENSURE_POWER {Printer::enablePowerIfNeeded();}
@@ -1288,7 +1288,7 @@ public:
 #if (E2_IS_TMC2130)
 	static Trinamic_TMC2130 stepperE2;
 /////// END INVENTOR BOARD TMC2130 Driver Support ///////	
-
+#endif
 #endif
 #if defined(DRV_TMC2130)
     static void configTMC2130(TMC2130Stepper* tmc_driver, bool tmc_stealthchop, int8_t tmc_sgt,
