@@ -555,13 +555,13 @@ void Printer::tmc2130_init() {
 	stepperX.set_intpol(1);
 	stepperX.set_tbl(2); // ([0-3]) set comparator blank time to 16, 24, 36 or 54 clocks, 1 or 2 is recommended
 	stepperX.set_toff(3); // ([0-15]) 0: driver disable, 1: use only with TBL>2, 2-15: off time setting during slow decay phase
-	stepperX.set_hstrt(6);
-	stepperX.set_hend(0);
+	stepperX.set_hstrt(6);  // 6 for Hbot system
+	stepperX.set_hend(10);  // 0 for Hbot system
 	stepperX.set_chm(0);
 	stepperX.set_TPOWERDOWN(10);
 	stepperX.set_en_pwm_mode(0);	// Disable stealthchop
 	stepperX.set_TCOOLTHRS(250);
-	stepperX.set_sfilt(0);
+	stepperX.set_sfilt(1);  // 0 for Hbot system
 	stepperX.set_sgt(0);
 	// Coolstep
 	stepperX.set_seimin(1);
@@ -593,13 +593,13 @@ void Printer::tmc2130_init() {
 	stepperY.set_intpol(1);
 	stepperY.set_tbl(2);
 	stepperY.set_toff(3);
-	stepperY.set_hstrt(6);
-	stepperY.set_hend(0);
+	stepperY.set_hstrt(6);  // 6 for Hbot system
+	stepperY.set_hend(10);  // 0 for Hbot system
 	stepperY.set_chm(0);
 	stepperY.set_TPOWERDOWN(10);
 	stepperY.set_en_pwm_mode(0);
 	stepperY.set_TCOOLTHRS(250);
-	stepperY.set_sfilt(0);
+	stepperY.set_sfilt(1);  // 0 for Hbot system
 	stepperY.set_sgt(0);
 	// Coolstep
 	stepperY.set_seimin(1);
@@ -631,13 +631,13 @@ void Printer::tmc2130_init() {
 	stepperZ.set_intpol(1);
 	stepperZ.set_tbl(2);
 	stepperZ.set_toff(3);
-	stepperZ.set_hstrt(2);
-	stepperZ.set_hend(10);
+	stepperZ.set_hstrt(6); // 2 for Hbot system
+	stepperZ.set_hend(10);  // 10 for Hbot system
 	stepperZ.set_chm(0);
 	stepperZ.set_TPOWERDOWN(10);
 	stepperZ.set_en_pwm_mode(0);
 	stepperZ.set_TCOOLTHRS(250);
-	stepperZ.set_sfilt(1);
+	stepperZ.set_sfilt(1);  // 1 for Hbot system
 	stepperZ.set_sgt(0);
 	// Coolstep
 	stepperZ.set_seimin(1);
